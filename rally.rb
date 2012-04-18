@@ -5,7 +5,8 @@ require 'pp'
 
 module RallyClock
   CONFIG = File.join(ENV['HOME'], '.rally.rc')
-  METHODS = ['ping', 'auth', 'whoami', 'projects', 'entries', 'entry', 'commit', 'edit']
+  PROJECT_CONFIG = File.join(ENV['PWD'], '.rally.rc')
+  METHODS = ['ping', 'auth', 'set_project', 'signup', 'whoami', 'projects', 'entries', 'entry', 'commit', 'edit']
   
   class CLI
     def initialize(args)
@@ -29,7 +30,7 @@ module RallyClock
         to: "YYYY-MM-DD, returns entries up 'till this date. use with 'from' to filter",
         id: "returns the given entry by id",
         note: "detail your activity for an entry",
-        date: "defaults to today's date",
+        date: "YYYY-MM-DD, defaults to today's date",
         time: "XhXXm, time to be entered",
         code: "the project's code",
         handle: "the group's handle"
@@ -39,6 +40,15 @@ module RallyClock
       
       if File.exists? CONFIG
         File.open(CONFIG, 'r') do |file|
+          file.readlines.each do |line|
+            key,value = line.chomp.split(':',2)
+            @options[key.intern] = value
+          end
+        end
+      end
+
+      if File.exists? PROJECT_CONFIG
+        File.open(PROJECT_CONFIG, 'r') do |file|
           file.readlines.each do |line|
             key,value = line.chomp.split(':',2)
             @options[key.intern] = value
@@ -69,6 +79,10 @@ module RallyClock
         opts.on("-p=PASSWORD", "--password", help[:password]) do |password|
           @options[:password] = password
         end
+        
+        opts.on("-d=DATE", "--date", help[:date]) do |date|
+          @options[:date] = date
+        end
 
         opts.on("--from=FROM", help[:from]) do |from|
           @options[:from] = from.gsub('-','')
@@ -96,10 +110,6 @@ module RallyClock
         
         opts.on("-n=NOTE", "--note", help[:note]) do |note|
           @options[:note] = note
-        end
-        
-        opts.on("-d=DATE", "--date", help[:date]) do |date|
-          @options[:date] = date
         end
       end
 
@@ -132,8 +142,22 @@ module RallyClock
       puts "created #{CONFIG}"
     end
 
+    def set_project
+      File.open(PROJECT_CONFIG, 'w') do |file|
+        file.puts "code:#{@options[:code]}"
+        file.puts "handle:#{@options[:handle]}"
+      end
+      puts "created #{PROJECT_CONFIG}"
+    end
+
     def whoami
       resp = `curl -s #{@options[:url]}/api/v1/me?t=#{@options[:token]}`
+      output(resp)
+    end
+
+    def signup
+      params = "email=#{@options[:email]}&password=#{@options[:password]}&username=#{@options[:username]}"
+      resp = `curl -d "#{params}" #{@options[:url]}/api/v1/users`
       output(resp)
     end
 
