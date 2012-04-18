@@ -34,6 +34,7 @@ module RallyClock
         time: "XhXXm, time to be entered",
         code: "the project's code",
         handle: "the group's handle",
+        prompt: "review entries before submission to server",
         by: "your name/email as it appears on git logs"
       }
 
@@ -129,6 +130,10 @@ module RallyClock
         opts.on("--by=BY", help[:by]) do |by|
           @options[:by] = by
         end
+
+        opts.on("--prompt", help[:prompt]) do |prompt|
+          @options[:prompt] = true
+        end
       end
 
       @method = @args.first
@@ -204,6 +209,24 @@ module RallyClock
     end
 
     def create
+      if @options[:prompt]
+        puts <<-INFO
+          About to create time entry with
+          --
+          time:       #{@options[:time]}m
+          message:    #{@options[:note]}
+          group:      #{@options[:handle]}
+          project:    #{@options[:code]}
+          --
+
+          enter 'y' to confirm:
+        INFO
+        prompt = $stdin.gets.chomp
+        unless prompt =~ /y/
+          puts "aborted"
+          return
+        end
+      end
       resp = `curl -s '#{@options[:url]}/api/v1/#{@options[:handle]}/projects/#{@options[:code]}/entries?t=#{@options[:token]}' -d "entry[time]=#{@options[:time]}&entry[note]=#{@options[:note]}&#{maybe(:date)}"`
       output(resp, ['id'], "created time entry with")
     end
