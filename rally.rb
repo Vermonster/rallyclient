@@ -70,11 +70,11 @@ module RallyClock
           @options[:password] = password
         end
 
-        opts.on("-f=FROM", "--from", help[:from]) do |from|
+        opts.on("--from=FROM", help[:from]) do |from|
           @options[:from] = from.gsub('-','')
         end
         
-        opts.on("-t=TO", "--to", help[:to]) do |to|
+        opts.on("--to=TO", help[:to]) do |to|
           @options[:to] = to.gsub('-','')
         end
         
@@ -82,15 +82,15 @@ module RallyClock
           @options[:id] = id
         end
         
-        opts.on("-c=CODE", "--code", help[:code]) do |code|
+        opts.on("-p=CODE", "--project", help[:code]) do |code|
           @options[:code] = code
         end
         
-        opts.on("-h=HANDLE", "--handle", help[:handle]) do |handle|
+        opts.on("--handle=HANDLE", help[:handle]) do |handle|
           @options[:handle] = handle
         end
         
-        opts.on("-k=TIME", "--time", help[:time]) do |time|
+        opts.on("-t=TIME", "--time", help[:time]) do |time|
           @options[:time] = convert(time)
         end
         
@@ -104,7 +104,7 @@ module RallyClock
       end
 
       @method = @args.first
-      @method ? op.parse!(@args) : op.parse!(["-h"])
+      @method && !@args.include?("-h") ? op.parse!(@args) : op.parse!(["--help"])
     end
 
     def run
