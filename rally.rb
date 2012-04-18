@@ -151,21 +151,22 @@ module RallyClock
     def auth
       resp = `curl -s -X POST #{@options[:url]}/api/v1/sessions -H 'X_USERNAME: #{@options[:username]}' -H 'X_PASSWORD: #{@options[:password]}'`
       content = JSON.parse(resp)
-      File.open(CONFIG, 'w') do |file|
-        file.puts "url:#{@options[:url]}"
-        file.puts "username:#{content["username"]}"
-        file.puts "email:#{content["email"]}"
-        file.puts "token:#{content["api_key"]}"
+      if content["api_key"]
+        File.open(CONFIG, 'w') do |file|
+          file.puts "url:#{@options[:url]}"
+          file.puts "username:#{content["username"]}"
+          file.puts "email:#{content["email"]}"
+          file.puts "token:#{content["api_key"]}"
+          file.puts "handle:#{@options[:handle]}" if @options[:handle]
+        end
+        puts "created #{CONFIG}"
+      elsif content["error"]
+        puts "Server sent error: \n" + content["error"]
+      else
+        puts "Failed to retrieve api key, and the server sent no error message. Make sure the URL is correct."
       end
-      puts "created #{CONFIG}"
-    end
-
-    def set_project
-      File.open(PROJECT_CONFIG, 'w') do |file|
-        file.puts "code:#{@options[:code]}"
-        file.puts "handle:#{@options[:handle]}"
-      end
-      puts "created #{PROJECT_CONFIG}"
+    rescue
+      puts "Failed to retrieve api key, and the server sent no error message. Make sure the URL is correct."
     end
 
     def whoami
