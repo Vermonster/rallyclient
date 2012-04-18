@@ -119,7 +119,7 @@ module RallyClock
         end
         
         opts.on("-t=TIME", "--time", help[:time]) do |time|
-          @options[:time] = convert(time)
+          @options[:time] = hm_to_m(time)
         end
         
         opts.on("-m=MESSAGE", "--message", help[:note]) do |note|
@@ -204,7 +204,7 @@ module RallyClock
 
     def create
       resp = `curl -s '#{@options[:url]}/api/v1/#{@options[:handle]}/projects/#{@options[:code]}/entries?t=#{@options[:token]}' -d "entry[time]=#{@options[:time]}&entry[note]=#{@options[:note]}&#{maybe(:date)}"`
-      output(resp)
+      output(resp, ['id'], "created time entry with")
     end
 
     def edit
@@ -247,21 +247,56 @@ module RallyClock
       args.reject(&:empty?).join('&')
     end
 
-    def convert(time)
-      hours = time[/(\d+)h/, 1].to_i
-      minutes = time[/(\d+)m/, 1].to_i
+    def hm_to_m(hm)
+      hours = hm[/(\d+)h/, 1].to_i
+      minutes = hm[/(\d+)m/, 1].to_i
       (hours > 0 ? 60 * hours : hours) + minutes
     end
 
-    def output(resp)
+    def m_to_hm(m)
+      hours = m.to_i / 60
+      minutes = m.to_i % 60
+      "#{hours}h#{minutes}m"
+    end
+
+    def output(resp, cols=[], msg=nil)
       content = JSON.parse(resp)
       if content.is_a? Hash and content['error']
         pp content['error']
       else
-        pp content
+        puts msg if msg
+        if content.is_a?(Array) && content.first.is_a?(Hash)
+          puts "\n--\n\n"
+          puts format_array_of_hashes(content, cols)
+        else
+          puts format_hash(content, cols)
+        end
       end
     rescue => e
       puts e.message + " : '" + resp + "'"
+    end
+
+    def format_array_of_hashes(array, cols_for_hash=[])
+      array.map! do |a|
+        format_hash(a, cols_for_hash) << "\n\n--\n\n"
+      end
+    end
+
+    def format_hash(hash, cols=[])
+      lines = {}
+      hash.each do |key, val|
+        val = m_to_hm(val) if key == 'time'
+        lines[key] = "%-15s : %s" % [key, val]
+      end
+      sorted_lines = lines.values
+      if cols.any?
+        sorted_lines = []
+        cols.each do |col|
+          sorted_lines << lines[col]
+        end
+      end
+
+      return sorted_lines.join("\n")
     end
 
   end
