@@ -6,7 +6,7 @@ require 'pp'
 module RallyClock
   CONFIG = File.join(ENV['HOME'], '.rally.rc')
   PROJECT_CONFIG = File.join(ENV['PWD'], '.rally.rc')
-  METHODS = ['ping', 'auth', 'set_project', 'signup', 'whoami', 'projects', 'entries', 'entry', 'commit', 'edit']
+  METHODS = ['ping', 'auth', 'set_project', 'signup', 'whoami', 'projects', 'entries', 'entry', 'log', 'edit', 'find_git_logs']
   
   class CLI
     def initialize(args)
@@ -33,7 +33,8 @@ module RallyClock
         date: "YYYY-MM-DD, defaults to today's date",
         time: "XhXXm, time to be entered",
         code: "the project's code",
-        handle: "the group's handle"
+        handle: "the group's handle",
+        by: "your name/email as it appears on git logs"
       }
 
       @options = {}
@@ -111,6 +112,10 @@ module RallyClock
         opts.on("-n=NOTE", "--note", help[:note]) do |note|
           @options[:note] = note
         end
+
+        opts.on("--by=BY", help[:by]) do |by|
+          @options[:by] = by
+        end
       end
 
       @method = @args.first
@@ -184,7 +189,7 @@ module RallyClock
       output(resp)
     end
 
-    def commit
+    def log
       resp = `curl -s '#{@options[:url]}/api/v1/#{@options[:handle]}/projects/#{@options[:code]}/entries?t=#{@options[:token]}' -d "entry[time]=#{@options[:time]}&entry[note]=#{@options[:note]}#{maybe(:date)}"`
       output(resp)
     end
@@ -192,6 +197,33 @@ module RallyClock
     def edit
       resp = `curl -s -X PUT #{@options[:url]}/api/v1/me/entries/#{@options[:id]}?t=#{@options[:token]} -d "#{maybe(:time, :date, :note)}"`
       output(resp)
+    end
+
+    def find_git_logs
+      # get all logs
+      logs = `git log`.split(/commit [a-z0-9]*$/)
+
+      # filter
+      me   = @options[:by]
+      time = @options[:date] ? Time.new(*@options[:date].split("-")) : Time.now
+      logs.select!{|l| l =~ /#{me || '.'}/ && l =~ /#{time.strftime("%b %d")}/ }
+
+      # let user edit results
+      if logs.empty?
+        puts "No commits found."
+      else
+        # open a vim window with all the commits
+        temp_path = "/tmp/git-logs-#{Process.pid}"
+        File.open(temp_path, 'w') {|f| f.puts logs }
+        system "vi #{temp_path}"
+        message = File.read(temp_path)
+        system "rm #{temp_path}"
+
+        # for now, just print
+        puts "*********************************\n"
+        puts message.chomp
+        puts "\n*********************************"
+      end 
     end
 
     def maybe(*keys)
@@ -216,6 +248,7 @@ module RallyClock
         pp content
       end
     end
+
   end
 end
 
