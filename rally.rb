@@ -34,6 +34,7 @@ module RallyClock
         time: "XhXXm, time to be entered",
         code: "the project's code",
         handle: "the group's handle",
+        account: "the client's account id",
         prompt: "review entries before submission to server",
         by: "your name/email as it appears on git logs"
       }
@@ -115,8 +116,12 @@ module RallyClock
           @options[:code] = code
         end
         
-        opts.on("--handle=HANDLE", help[:handle]) do |handle|
+        opts.on("--group=HANDLE", help[:handle]) do |handle|
           @options[:handle] = handle
+        end
+
+        opts.on("--client=ACCOUNT", help[:account]) do |account|
+          @options[:account] = account
         end
         
         opts.on("-t=TIME", "--time", help[:time]) do |time|
@@ -211,15 +216,16 @@ module RallyClock
     def create
       if @options[:prompt]
         puts <<-INFO
-          About to create time entry with
-          --
-          time:       #{@options[:time]}m
-          message:    #{@options[:note]}
-          group:      #{@options[:handle]}
-          project:    #{@options[:code]}
-          --
+About to create time entry with
+--
+time:       #{@options[:time]}m
+message:    #{@options[:note]}
+group:      #{@options[:handle]}
+client:     #{@options[:account]}
+project:    #{@options[:code]}
+--
 
-          enter 'y' to confirm:
+enter 'y' to confirm:
         INFO
         prompt = $stdin.gets.chomp
         unless prompt =~ /y/
@@ -227,7 +233,7 @@ module RallyClock
           return
         end
       end
-      resp = `curl -s '#{@options[:url]}/api/v1/#{@options[:handle]}/projects/#{@options[:code]}/entries?t=#{@options[:token]}' -d "entry[time]=#{@options[:time]}&entry[note]=#{@options[:note]}&#{maybe(:date)}"`
+      resp = `curl -s '#{@options[:url]}/api/v1/#{@options[:handle]}/clients/#{@options[:account]}/projects/#{@options[:code]}/entries?t=#{@options[:token]}' -d "entry[time]=#{@options[:time]}&entry[note]=#{@options[:note]}&#{maybe(:date)}"`
       output(resp, ['id'], "created time entry with")
     end
 
