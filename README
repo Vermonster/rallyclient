@@ -26,12 +26,16 @@ what projects am i assigned to?
 GET /me/projects
 
 
-rally entries --from 'blah', --to 'blah' --id 'blah'
+rally entries --from 'blah', --to 'blah'
 get my entries
 GET /me/entries
   - from ('YYYY-MM-DD')
   - to ('YYYY-MM-DD')
-  - id
+
+rally entry --id 'blah'
+get a single entry
+GET /me/entries/:id
+  - id 
 
 rally commit --handle 'blah' --code 'blah' --time 'blah', --note 'blah' --date 'blah'
 create an entry
