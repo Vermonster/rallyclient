@@ -4,9 +4,9 @@ require 'json'
 require 'pp'
 
 module RallyClock
-  CONFIG = File.join(ENV['HOME'], '.rally.rc')
-  PROJECT_CONFIG = File.join(ENV['PWD'], '.rally.rc')
-  METHODS = ['ping', 'auth', 'set_project', 'signup', 'whoami', 'projects', 'entries', 'entry', 'log', 'edit', 'find_git_logs']
+  CONFIG = File.join(ENV['HOME'], '.rallyclockrc')
+  PROJECT_CONFIG = File.join(ENV['PWD'], '.rallyclockrc')
+  METHODS = ['ping', 'auth', 'set-project', 'signup', 'whoami', 'projects', 'log', 'entry', 'create', 'edit', 'find-git-logs']
   
   class CLI
     def initialize(args)
@@ -66,11 +66,11 @@ module RallyClock
       signup            url, username, email, password
       whoami
       auth              url, username, password
-      set_project       handle, code
+      set-project       handle, code
       projects 
-      entries           from, to
+      log               from, to
       entry             id
-      log               note, time
+      create            note, time
       edit              id
       USAGE
 
@@ -137,7 +137,7 @@ module RallyClock
 
     def run
       if METHODS.include? @method
-        send(@method)
+        send(@method.gsub('-','_').to_sym)
       elsif @method != "--help"
         puts "Unknown command #{@method}."
       end
@@ -184,7 +184,7 @@ module RallyClock
       output(resp)
     end
     
-    def entries
+    def log 
       resp = if @options[:from] and @options[:to]
                `curl -s '#{@options[:url]}/api/v1/me/entries?t=#{@options[:token]}&from=#{@options[:from]}&to=#{@options[:to]}'`
              elsif @options[:from]
@@ -202,7 +202,7 @@ module RallyClock
       output(resp)
     end
 
-    def log
+    def create
       resp = `curl -s '#{@options[:url]}/api/v1/#{@options[:handle]}/projects/#{@options[:code]}/entries?t=#{@options[:token]}' -d "entry[time]=#{@options[:time]}&entry[note]=#{@options[:note]}&#{maybe(:date)}"`
       output(resp)
     end
@@ -228,7 +228,7 @@ module RallyClock
         # open a vim window with all the commits
         temp_path = "/tmp/git-logs-#{Process.pid}"
         File.open(temp_path, 'w') {|f| f.puts logs }
-        system "vi #{temp_path}"
+        system "#{ENV['EDITOR']} #{temp_path}"
         message = File.read(temp_path)
         system "rm #{temp_path}"
 
@@ -260,6 +260,8 @@ module RallyClock
       else
         pp content
       end
+    rescue => e
+      puts e.message + " : '" + resp + "'"
     end
 
   end
