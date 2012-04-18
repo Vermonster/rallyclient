@@ -6,7 +6,7 @@ require 'pp'
 module RallyClock
   CONFIG = File.join(ENV['HOME'], '.rallyclockrc')
   PROJECT_CONFIG = File.join(ENV['PWD'], '.rallyclockrc')
-  METHODS = ['ping', 'auth', 'set-project', 'signup', 'whoami', 'projects', 'log', 'entry', 'create', 'edit', 'find-git-logs']
+  METHODS = ['ping', 'auth', 'set-project', 'signup', 'whoami', 'projects', 'log', 'entry', 'create', 'edit', 'delete', 'find-git-logs']
   
   class CLI
     def initialize(args)
@@ -239,6 +239,11 @@ enter 'y' to confirm:
 
     def edit
       resp = `curl -s -X PUT #{@options[:url]}/api/v1/me/entries/#{@options[:id]}?t=#{@options[:token]} -d "#{maybe(:time, :date, :note)}"`
+      output(resp)
+    end
+
+    def delete
+      resp = `curl -s -X DELETE #{@options[:url]}/api/v1/me/entries/#{@options[:id]}?t=#{@options[:token]}`
       output(resp)
     end
 
