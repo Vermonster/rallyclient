@@ -122,7 +122,7 @@ module RallyClock
           @options[:time] = convert(time)
         end
         
-        opts.on("-n=NOTE", "--note", help[:note]) do |note|
+        opts.on("-m=MESSAGE", "--message", help[:note]) do |note|
           @options[:note] = note
         end
 
