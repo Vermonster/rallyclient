@@ -161,22 +161,18 @@ module RallyClock
     end
 
     def commit
-      resp = `curl -s '#{@options[:url]}/api/v1/#{@options[:handle]}/projects/#{@options[:code]}/entries' -d "time=#{@options[:time]}&note='#{@options[:note]}'#{maybe(:date)}"`
+      resp = `curl -s '#{@options[:url]}/api/v1/#{@options[:handle]}/projects/#{@options[:code]}/entries?t=#{@options[:token]}' -d "entry[time]=#{@options[:time]}&entry[note]=#{@options[:note]}#{maybe(:date)}"`
       output(resp)
     end
 
     def edit
-      resp = `curl -s -X PUT #{@options[:url]}/api/v1/#{@options[:handle]}/projects/#{@options[:code]}/entries -d "#{maybe(:time, :date, :note)}"`
+      resp = `curl -s -X PUT #{@options[:url]}/api/v1/me/entries/#{@options[:id]}?t=#{@options[:token]} -d "#{maybe(:time, :date, :note)}"`
       output(resp)
     end
 
     def maybe(*keys)
       args = keys.map do |k|
-        if k == :note
-          @options[k] ? "#{k}='#{@options[k]}'" : ""
-        else
-          @options[k] ? "#{k}=#{@options[k]}" : ""
-        end
+        @options[k] ? "entry[#{k}]=#{@options[k]}" : ""
       end
 
       args.reject(&:empty?).join('&')
