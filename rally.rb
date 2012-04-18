@@ -59,7 +59,20 @@ module RallyClock
       
       op = OptionParser.new do |opts|
         executable_name = File.basename($PROGRAM_NAME)
-        opts.banner = "Usage: #{executable_name} [command] [args]"
+        opts.banner = (<<-USAGE)
+    Usage: #{executable_name} [command] [args]
+    Commands:           Required Args:
+      ping
+      signup            url, username, email, password
+      whoami
+      auth              url, username, password
+      set_project       handle, code
+      projects 
+      entries           from, to
+      entry             id
+      log               note, time
+      edit              id
+      USAGE
 
         opts.on("-x=TOKEN", "--token", help[:token]) do |token|
           @options[:token] = token
@@ -82,7 +95,7 @@ module RallyClock
         end
         
         opts.on("-d=DATE", "--date", help[:date]) do |date|
-          @options[:date] = date
+          @options[:date] = date.gsub('-','')
         end
 
         opts.on("--from=FROM", help[:from]) do |from|
@@ -190,7 +203,7 @@ module RallyClock
     end
 
     def log
-      resp = `curl -s '#{@options[:url]}/api/v1/#{@options[:handle]}/projects/#{@options[:code]}/entries?t=#{@options[:token]}' -d "entry[time]=#{@options[:time]}&entry[note]=#{@options[:note]}#{maybe(:date)}"`
+      resp = `curl -s '#{@options[:url]}/api/v1/#{@options[:handle]}/projects/#{@options[:code]}/entries?t=#{@options[:token]}' -d "entry[time]=#{@options[:time]}&entry[note]=#{@options[:note]}&#{maybe(:date)}"`
       output(resp)
     end
 
